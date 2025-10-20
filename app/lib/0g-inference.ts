@@ -2,7 +2,7 @@ import { createZGComputeNetworkBroker, ZGComputeNetworkBroker } from "@0glabs/0g
 import { ethers } from "ethers";
 import OpenAI from "openai";
 
-// Official 0G providers from the example
+// Official 0G providers
 const OFFICIAL_PROVIDERS = {
   "llama-3.3-70b-instruct": "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
   "deepseek-r1-70b": "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3"
