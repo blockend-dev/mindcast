@@ -9,9 +9,9 @@ export class ZeroGStorage {
   private provider: ethers.JsonRpcProvider;
 
   constructor() {
-    const RPC_URL = process.env.NEXT_PUBLIC_OG_RPC_URL || "https://evmrpc-testnet.0g.ai/";
-    const INDEXER_RPC = process.env.NEXT_PUBLIC_INDEXER_RPC || "https://indexer-storage-testnet-standard.0g.ai";
-    const PRIVATE_KEY = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+    const RPC_URL = process.env.OG_RPC_URL!;
+    const INDEXER_RPC = process.env.INDEXER_RPC!;
+    const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
     if (!PRIVATE_KEY) {
       throw new Error("NEXT_PUBLIC_PRIVATE_KEY is required");
@@ -50,7 +50,7 @@ export class ZeroGStorage {
 
       const [tx, uploadErr] = await this.indexer.upload(
         zgFile,
-        process.env.NEXT_PUBLIC_OG_RPC_URL!,
+        process.env.OG_RPC_URL!,
         this.signer as any
       );
 
@@ -102,7 +102,7 @@ export class ZeroGStorage {
 
       const [tx, uploadErr] = await this.indexer.upload(
         zgFile,
-        process.env.NEXT_PUBLIC_OG_RPC_URL!,
+        process.env.OG_RPC_URL!,
         this.signer as any
       );
 

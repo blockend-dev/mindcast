@@ -2,6 +2,20 @@ import { createPublicClient, createWalletClient, custom, http, parseEther } from
 import { mainnet, sepolia } from 'viem/chains'
 import {MindCastRegistryABI}  from '../abis/MindCastRegistry'
 
+const testnet = {
+    id: 16602,
+    name: 'OG-Testnet-Galileo',
+    network: 'og-chain',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'OG',
+        symbol: 'OG',
+    },
+    rpcUrls: {
+        public: { http: [process.env.NEXT_PUBLIC_RPC_URL!] },
+        default: { http: [process.env.NEXT_PUBLIC_RPC_URL!] },
+    },
+} as const;
 
 export class MindCastContract {
   private contractAddress: `0x${string}`
@@ -12,11 +26,9 @@ export class MindCastContract {
     this.contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
     
     this.publicClient = createPublicClient({
-      chain: sepolia, // or your 0G chain configuration
-      transport: http(process.env.NEXT_PUBLIC_RPC_URL)
+      chain: testnet,
+      transport: http(process.env.NEXT_PUBLIC_RPC_URL!)
     })
-
-    // Wallet client will be initialized with user's wallet
   }
 
   setWalletClient(provider: any) {

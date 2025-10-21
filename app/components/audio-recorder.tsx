@@ -16,7 +16,7 @@ export function AudioRecorder() {
   const [uploadResult, setUploadResult] = useState<{ rootHash: string; transactionHash: string } | null>(null)
   const [publishResult, setPublishResult] = useState<{ txHash: string } | null>(null)
 
-  // 🎤 Mic state
+  // Mic state
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDevice, setSelectedDevice] = useState<string>('')
   const [volume, setVolume] = useState<number>(0)
@@ -29,7 +29,7 @@ export function AudioRecorder() {
   const { useCreateEpisode, isConnected } = useMindCastContract()
   const createEpisodeMutation = useCreateEpisode()
 
-  // 🎧 Load microphones
+  // Load microphones
   const loadDevices = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -76,7 +76,7 @@ export function AudioRecorder() {
         setAudioBlob(blob)
       }
 
-      // 🎛️ Live volume meter
+      // Live volume meter
       const ctx = new AudioContext()
       const source = ctx.createMediaStreamSource(stream)
       const analyser = ctx.createAnalyser()
@@ -115,8 +115,9 @@ export function AudioRecorder() {
     try {
       setUploadState('uploading')
 
+      const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
       const formData = new FormData()
-      formData.append('audio', audioBlob, 'recording.webm')
+      formData.append('file', audioFile);
 
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
@@ -199,9 +200,8 @@ export function AudioRecorder() {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-white">Create Podcast Episode</h3>
         <div
-          className={`w-3 h-3 rounded-full ${
-            isRecording ? 'bg-red-500 animate-pulse' : uploadState !== 'idle' ? 'bg-blue-500' : 'bg-gray-600'
-          }`}
+          className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : uploadState !== 'idle' ? 'bg-blue-500' : 'bg-gray-600'
+            }`}
         />
       </div>
 
@@ -338,10 +338,10 @@ export function AudioRecorder() {
                     uploadState === 'uploading'
                       ? '33%'
                       : uploadState === 'processing'
-                      ? '66%'
-                      : uploadState === 'publishing'
-                      ? '100%'
-                      : '0%',
+                        ? '66%'
+                        : uploadState === 'publishing'
+                          ? '100%'
+                          : '0%',
                 }}
               />
             </div>

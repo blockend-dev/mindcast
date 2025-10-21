@@ -1,4 +1,5 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { http } from 'wagmi';
 
 const testnet = {
     id: 16602,
@@ -19,6 +20,9 @@ export const config = getDefaultConfig({
   appName: 'Mindcast',
   projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID!, 
   chains: [testnet],
+  transports :{
+    [testnet.id] :http('https://evmrpc-testnet.0g.ai')
+  },
   ssr: true, 
 });
 
