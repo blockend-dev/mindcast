@@ -2,27 +2,10 @@
 
 import { useState } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { AudioRecorder } from './components/audio-recorder'
-import { PodcastPlayer } from './components/podcast-player'
+import { AudioRecorder } from '@/app/components/audio-recorder'
+import { EpisodesFeed } from '@/app/components/episodes-feed'
 import { Button } from './components/ui/button'
 import { Mic, Headphones, Zap } from 'lucide-react'
-
-const mockEpisodes = [
-  {
-    title: "The Future of Web3 Podcasting",
-    audioURI: "https://example.com/audio1.mp3",
-    summary: "Exploring the potential of decentralized audio content and how blockchain is revolutionizing podcasting.",
-    creator: "0x742d35Cc6634C0532925a3b8D",
-    timestamp: Date.now() - 86400000
-  },
-  {
-    title: "Zero Knowledge Proofs Explained",
-    audioURI: "https://example.com/audio2.mp3",
-    summary: "A deep dive into zk-proofs and their applications in modern blockchain technology.",
-    creator: "0x89205A3a3b2C69C8",
-    timestamp: Date.now() - 172800000
-  }
-]
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'listen' | 'create'>('listen')
@@ -58,11 +41,21 @@ export default function Home() {
           </p>
           
           <div className="flex gap-4 justify-center mb-16">
-            <Button variant="premium" size="lg" className="rounded-full px-8">
+            <Button 
+              variant="premium" 
+              size="lg" 
+              className="rounded-full px-8"
+              onClick={() => setActiveTab('create')}
+            >
               <Mic className="w-5 h-5 mr-2" />
               Start Recording
             </Button>
-            <Button variant="outline" size="lg" className="rounded-full px-8 border-gray-700 text-white hover:bg-gray-800">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="rounded-full px-8 border-gray-700 text-white hover:bg-gray-800"
+              onClick={() => setActiveTab('listen')}
+            >
               <Headphones className="w-5 h-5 mr-2" />
               Explore Podcasts
             </Button>
@@ -112,10 +105,8 @@ export default function Home() {
 
         {/* Content */}
         {activeTab === 'listen' ? (
-          <div className="grid gap-6 max-w-4xl mx-auto">
-            {mockEpisodes.map((episode, index) => (
-              <PodcastPlayer key={index} episode={episode} />
-            ))}
+          <div className="max-w-4xl mx-auto">
+            <EpisodesFeed />
           </div>
         ) : (
           <div className="max-w-2xl mx-auto">
