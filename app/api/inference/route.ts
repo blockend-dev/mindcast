@@ -13,13 +13,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Transcribe audio using 0G Inference
+    // Transcribe audio 
     const transcript = await zeroGInference.transcribeAudio(audioCid)
     
-    // Generate summary
+    //  Generate summary
     const summary = await zeroGInference.generateSummary(transcript)
     
-    // Step  Extract topics
+    // Extract topics
     const topics = await zeroGInference.extractTopics(transcript)
     
     // Upload transcript to 0G Storage

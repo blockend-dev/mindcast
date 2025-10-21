@@ -11,8 +11,8 @@ interface PodcastPlayerProps {
     id: number
     creator: string
     title: string
-    audioURI: string
-    transcriptURI: string
+    audioURI: string 
+    transcriptURI: string 
     summary: string
     tags: string
     timestamp: number
@@ -27,16 +27,30 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
   const [showTipModal, setShowTipModal] = useState(false)
   const [tipAmount, setTipAmount] = useState('0.001')
   const [isTipping, setIsTipping] = useState(false)
+  const [audioUrl, setAudioUrl] = useState<string>('')
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const { useTipCreator, address, isConnected } = useMindCastContract()
   const tipMutation = useTipCreator()
+
+  // Generate audio URL from rootHash
+  const getAudioUrl = (rootHash: string) => {
+    return `/api/download/${rootHash}`
+  }
 
   const togglePlay = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause()
       } else {
+        // Set the audio source when first playing
+        if (!audioUrl) {
+          const url = getAudioUrl(episode.audioURI)
+          setAudioUrl(url)
+          if (audioRef.current) {
+            audioRef.current.src = url
+          }
+        }
         audioRef.current.play()
       }
       setIsPlaying(!isPlaying)
@@ -85,6 +99,22 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
     // Convert from wei to ETH
     const eth = Number(amount) / 1e18
     return eth.toFixed(4)
+  }
+
+  const handleViewTranscript = async () => {
+    try {
+      const response = await fetch(`/api/download/${episode.transcriptURI}`)
+      if (response.ok) {
+        const transcriptData = await response.json()
+        // Show transcript in a modal or new window
+        alert(`Transcript: ${transcriptData.transcript || 'No transcript available'}`)
+      } else {
+        throw new Error('Failed to fetch transcript')
+      }
+    } catch (error) {
+      console.error('Error fetching transcript:', error)
+      alert('Failed to load transcript')
+    }
   }
 
   return (
@@ -144,9 +174,14 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
                     <Heart className="w-4 h-4 mr-2" />
                     Like
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-blue-400 hover:text-blue-300"
+                    onClick={handleViewTranscript}
+                  >
                     <Share2 className="w-4 h-4 mr-2" />
-                    Share
+                    Transcript
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -184,10 +219,14 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
         
         <audio
           ref={audioRef}
-          src={episode.audioURI.replace('ipfs://', 'https://ipfs.io/ipfs/')}
+          src={audioUrl}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleTimeUpdate}
           onEnded={() => setIsPlaying(false)}
+          onError={(e) => {
+            console.error('Audio loading error:', e)
+            alert('Failed to load audio. Please try again.')
+          }}
         />
       </div>
 

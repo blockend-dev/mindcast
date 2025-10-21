@@ -16,3 +16,7 @@ export function formatTimestamp(timestamp: number): string {
     day: 'numeric'
   })
 }
+
+export function formatEther(wei: bigint): string {
+  return (Number(wei) / 1e18).toFixed(4)
+}

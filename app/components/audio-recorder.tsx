@@ -15,10 +15,10 @@ export function AudioRecorder() {
   const [episodeTags, setEpisodeTags] = useState('')
   const [uploadResult, setUploadResult] = useState<{ rootHash: string; transactionHash: string } | null>(null)
   const [publishResult, setPublishResult] = useState<{ txHash: string } | null>(null)
-
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
-
+  
   const { useCreateEpisode, isConnected, address } = useMindCastContract()
   const createEpisodeMutation = useCreateEpisode()
 
@@ -28,7 +28,7 @@ export function AudioRecorder() {
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       })
-
+      
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
 
@@ -37,8 +37,8 @@ export function AudioRecorder() {
       }
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/webm;codecs=opus'
+        const audioBlob = new Blob(audioChunksRef.current, { 
+          type: 'audio/webm;codecs=opus' 
         })
         setAudioBlob(audioBlob)
       }
@@ -65,7 +65,7 @@ export function AudioRecorder() {
     try {
       setUploadState('uploading')
 
-      // Step 1: Upload audio to 0G Storage
+      //  Upload audio to 0G Storage
       const formData = new FormData()
       formData.append('audio', audioBlob, 'recording.webm')
 
@@ -78,14 +78,14 @@ export function AudioRecorder() {
         const errorData = await uploadResponse.json()
         throw new Error(errorData.error || 'Upload failed')
       }
-
+      
       const uploadResult = await uploadResponse.json()
       setUploadResult(uploadResult)
       const audioCid = uploadResult.rootHash
 
       setUploadState('processing')
 
-      // Step 2: AI Processing (Transcription & Summary)
+      //  AI Processing (Transcription & Summary)
       const inferenceResponse = await fetch('/api/inference', {
         method: 'POST',
         headers: {
@@ -98,24 +98,24 @@ export function AudioRecorder() {
         const errorData = await inferenceResponse.json()
         throw new Error(errorData.error || 'AI processing failed')
       }
-
+      
       const inferenceResult = await inferenceResponse.json()
       const { transcriptCid, summary, topics } = inferenceResult
 
       setUploadState('publishing')
 
-      // Step 3: Publish to Blockchain using contract
+      // Publish 
       const txHash = await createEpisodeMutation.mutateAsync({
         title: episodeTitle,
-        audioURI: `ipfs://${audioCid}`,
-        transcriptURI: `ipfs://${transcriptCid}`,
+        audioURI: audioCid,
+        transcriptURI: transcriptCid,
         summary: summary,
         tags: episodeTags || topics
       })
 
       setPublishResult({ txHash })
       setUploadState('success')
-
+      
       // Reset form after successful publish
       setTimeout(() => {
         setUploadState('idle')
@@ -135,38 +135,38 @@ export function AudioRecorder() {
   const getButtonState = () => {
     switch (uploadState) {
       case 'uploading':
-        return {
-          variant: 'secondary' as const,
+        return { 
+          variant: 'secondary' as const, 
           text: 'Uploading to 0G...',
           icon: <Loader2 className="w-4 h-4 animate-spin" />
         }
       case 'processing':
-        return {
-          variant: 'secondary' as const,
+        return { 
+          variant: 'secondary' as const, 
           text: 'AI Processing...',
           icon: <Loader2 className="w-4 h-4 animate-spin" />
         }
       case 'publishing':
-        return {
-          variant: 'secondary' as const,
+        return { 
+          variant: 'secondary' as const, 
           text: 'Publishing to Blockchain...',
           icon: <Loader2 className="w-4 h-4 animate-spin" />
         }
       case 'success':
-        return {
-          variant: 'premium' as const,
+        return { 
+          variant: 'premium' as const, 
           text: 'Published Successfully!',
           icon: <CheckCircle className="w-4 h-4" />
         }
       case 'error':
-        return {
-          variant: 'destructive' as const,
+        return { 
+          variant: 'destructive' as const, 
           text: 'Publish Failed - Try Again',
           icon: <Upload className="w-4 h-4" />
         }
       default:
-        return {
-          variant: 'premium' as const,
+        return { 
+          variant: 'premium' as const, 
           text: 'Publish to MindCast',
           icon: <Upload className="w-4 h-4" />
         }
@@ -179,11 +179,12 @@ export function AudioRecorder() {
     <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-gray-800">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-white">Create Podcast Episode</h3>
-        <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' :
-            uploadState !== 'idle' ? 'bg-blue-500' : 'bg-gray-600'
-          }`} />
+        <div className={`w-3 h-3 rounded-full ${
+          isRecording ? 'bg-red-500 animate-pulse' : 
+          uploadState !== 'idle' ? 'bg-blue-500' : 'bg-gray-600'
+        }`} />
       </div>
-
+      
       <div className="space-y-4">
         {/* Recording Controls */}
         <div className="flex gap-3">
@@ -197,7 +198,7 @@ export function AudioRecorder() {
             {isRecording ? 'Stop Recording' : 'Start Recording'}
           </Button>
         </div>
-
+        
         {/* Audio Preview */}
         {audioBlob && (
           <div className="space-y-4">
@@ -206,7 +207,7 @@ export function AudioRecorder() {
               src={URL.createObjectURL(audioBlob)}
               className="w-full rounded-lg"
             />
-
+            
             {/* Upload Result */}
             {uploadResult && (
               <div className="bg-gray-800 rounded-lg p-3 text-sm">
@@ -241,7 +242,7 @@ export function AudioRecorder() {
                 </Button>
               </div>
             )}
-
+            
             {/* Episode Details */}
             <div className="space-y-3">
               <div>
@@ -256,7 +257,7 @@ export function AudioRecorder() {
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Tags (comma separated)
@@ -269,7 +270,7 @@ export function AudioRecorder() {
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
-
+              
               <Button
                 variant={buttonState.variant}
                 onClick={handlePublish}
@@ -279,7 +280,7 @@ export function AudioRecorder() {
                 {buttonState.icon}
                 {buttonState.text}
               </Button>
-
+              
               {!isConnected && (
                 <p className="text-sm text-yellow-500 text-center">
                   Please connect your wallet to publish
@@ -288,7 +289,7 @@ export function AudioRecorder() {
             </div>
           </div>
         )}
-
+        
         {/* Upload Progress */}
         {uploadState !== 'idle' && uploadState !== 'success' && uploadState !== 'error' && (
           <div className="space-y-2">
@@ -297,13 +298,13 @@ export function AudioRecorder() {
               <span className="capitalize">{uploadState}</span>
             </div>
             <div className="w-full bg-gray-800 rounded-full h-2">
-              <div
+              <div 
                 className="bg-gradient-to-r from-purple-600 to-blue-500 h-2 rounded-full transition-all duration-300"
                 style={{
-                  width:
+                  width: 
                     uploadState === 'uploading' ? '33%' :
-                      uploadState === 'processing' ? '66%' :
-                        uploadState === 'publishing' ? '100%' : '0%'
+                    uploadState === 'processing' ? '66%' :
+                    uploadState === 'publishing' ? '100%' : '0%'
                 }}
               />
             </div>

@@ -9,21 +9,7 @@ export async function GET(
   try {
     const { rootHash } = await params;
 
-    if (!rootHash) {
-      return NextResponse.json(
-        { error: 'Root hash is required' },
-        { status: 400 }
-      );
-    }
-
-    const INDEXER_RPC = process.env.NEXT_PUBLIC_INDEXER_RPC;
-    if (!INDEXER_RPC) {
-      return NextResponse.json(
-        { error: '0G Storage configuration missing' },
-        { status: 500 }
-      );
-    }
-
+    const INDEXER_RPC = process.env.NEXT_PUBLIC_INDEXER_RPC!;
     const indexer = new Indexer(INDEXER_RPC);
 
     const downloadsDir = '/tmp';
@@ -45,14 +31,42 @@ export async function GET(
     // Clean up temp file
     fs.unlinkSync(outputPath);
 
-    // default
-    let contentType = 'application/octet-stream'; 
-    
-    // Try to detect audio files
-    if (rootHash.includes('audio') || fileBuffer.slice(0, 4).toString() === 'RIFF') {
-      contentType = 'audio/webm';
+    // Try to parse as JSON first (for transcripts)
+    try {
+      const content = fileBuffer.toString('utf-8');
+      const jsonData = JSON.parse(content);
+      
+      // If it's a transcript JSON, return as JSON
+      if (jsonData.transcript || jsonData.summary) {
+        return NextResponse.json(jsonData);
+      }
+    } catch (jsonError) {
+      // Not JSON, continue as binary file
     }
 
+    // Determine content type based on file content or extension
+    let contentType = 'application/octet-stream';
+    
+    // Check for audio files
+    if (fileBuffer.slice(0, 4).toString() === 'RIFF') {
+      contentType = 'audio/wav';
+    } else if (fileBuffer.slice(0, 3).toString() === 'ID3') {
+      contentType = 'audio/mpeg';
+    } else if (fileBuffer.slice(0, 4).toString() === 'fLaC') {
+      contentType = 'audio/flac';
+    }
+
+    // For audio files, return as audio stream
+    if (contentType.startsWith('audio/')) {
+      return new NextResponse(fileBuffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `inline; filename="audio-${rootHash}"`,
+        },
+      });
+    }
+
+    // For other files, return as download
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': contentType,
