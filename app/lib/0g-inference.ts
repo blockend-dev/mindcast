@@ -44,19 +44,17 @@ export class ZeroGInference {
     }
   }
 
-  async transcribeAudio(audioCid: string): Promise<string> {
+  /**
+   * Generate podcast summary based on title and tags
+   */
+  async generateSummaryFromTitle(title: string, tags?: string): Promise<string> {
     await this.ensureInitialized();
 
     try {
-      // For audio transcription, we need to use a provider that supports audio processing
-      // This is a simplified example - you might need to adjust based on available services
       const providerAddress = OFFICIAL_PROVIDERS["llama-3.3-70b-instruct"];
-      
-      // First, acknowledge the provider
       await this.broker!.inference.acknowledgeProviderSigner(providerAddress);
 
-      // Create a query for transcription
-      const query = `Please transcribe the audio file with CID: ${audioCid}. The audio is in webm format and contains podcast content.`;
+      const query = this.buildSummaryPrompt(title, tags);
 
       const { endpoint, model } = await this.broker!.inference.getServiceMetadata(providerAddress);
       const headers = await this.broker!.inference.getRequestHeaders(providerAddress, query);
@@ -77,61 +75,8 @@ export class ZeroGInference {
         {
           messages: [{ role: "user", content: query }],
           model,
-        },
-        {
-          headers: requestHeaders,
-        }
-      );
-
-      const content = completion.choices[0].message.content;
-      
-      // Process payment
-      const isValid = await this.broker!.inference.processResponse(
-        providerAddress,
-        content || "",
-        completion.id
-      );
-
-      if (!content) {
-        throw new Error("No transcription content received");
-      }
-
-      return content;
-    } catch (error) {
-      console.error('Audio transcription failed:', error);
-      throw new Error('Transcription service unavailable');
-    }
-  }
-
-  async generateSummary(transcript: string): Promise<string> {
-    await this.ensureInitialized();
-
-    try {
-      const providerAddress = OFFICIAL_PROVIDERS["llama-3.3-70b-instruct"];
-      await this.broker!.inference.acknowledgeProviderSigner(providerAddress);
-
-      const query = `Please provide a concise summary (around 200 words) of the following podcast transcript:\n\n${transcript}`;
-
-      const { endpoint, model } = await this.broker!.inference.getServiceMetadata(providerAddress);
-      const headers = await this.broker!.inference.getRequestHeaders(providerAddress, query);
-
-      const openai = new OpenAI({
-        baseURL: endpoint,
-        apiKey: "",
-      });
-
-      const requestHeaders: Record<string, string> = {};
-      Object.entries(headers).forEach(([key, value]) => {
-        if (typeof value === 'string') {
-          requestHeaders[key] = value;
-        }
-      });
-
-      const completion = await openai.chat.completions.create(
-        {
-          messages: [{ role: "user", content: query }],
-          model,
-          max_tokens: 300,
+          max_tokens: 200,
+          temperature: 0.7,
         },
         {
           headers: requestHeaders,
@@ -150,21 +95,25 @@ export class ZeroGInference {
         throw new Error("No summary content received");
       }
 
-      return content;
+      return this.cleanSummaryResponse(content);
     } catch (error) {
-      console.error('Summary generation failed:', error);
-      throw new Error('Summary service unavailable');
+      console.error('Summary generation from title failed:', error);
+      // Fallback to local generation
+      return this.generateLocalSummary(title, tags);
     }
   }
 
-  async extractTopics(transcript: string): Promise<string[]> {
+  /**
+   * Extract topics from title and tags
+   */
+  async extractTopicsFromTitle(title: string, tags?: string): Promise<string[]> {
     await this.ensureInitialized();
 
     try {
       const providerAddress = OFFICIAL_PROVIDERS["llama-3.3-70b-instruct"];
       await this.broker!.inference.acknowledgeProviderSigner(providerAddress);
 
-      const query = `Extract 3-5 main topics or keywords from the following podcast transcript. Return them as a comma-separated list:\n\n${transcript}`;
+      const query = this.buildTopicsPrompt(title, tags);
 
       const { endpoint, model } = await this.broker!.inference.getServiceMetadata(providerAddress);
       const headers = await this.broker!.inference.getRequestHeaders(providerAddress, query);
@@ -186,6 +135,7 @@ export class ZeroGInference {
           messages: [{ role: "user", content: query }],
           model,
           max_tokens: 100,
+          temperature: 0.3,
         },
         {
           headers: requestHeaders,
@@ -201,17 +151,207 @@ export class ZeroGInference {
       );
 
       if (!content) {
-        return [];
+        return this.extractLocalTopics(title, tags);
       }
 
-      // Parse comma-separated topics
-      return content.split(',').map(topic => topic.trim()).filter(topic => topic.length > 0);
+      return this.parseTopicsResponse(content);
     } catch (error) {
-      console.error('Topic extraction failed:', error);
-      return [];
+      console.error('Topic extraction from title failed:', error);
+      return this.extractLocalTopics(title, tags);
     }
   }
 
+  /**
+   * Process complete episode information using title and tags
+   */
+  async processEpisodeInfo(title: string, tags?: string): Promise<{
+    summary: string;
+    topics: string[];
+    success: boolean;
+  }> {
+    try {
+      console.log('Processing episode info with 0G Inference:', { title, tags });
+
+      // Generate both summary and topics in parallel
+      const [summary, topics] = await Promise.all([
+        this.generateSummaryFromTitle(title, tags),
+        this.extractTopicsFromTitle(title, tags)
+      ]);
+
+      return {
+        summary,
+        topics,
+        success: true
+      };
+    } catch (error) {
+      console.error('0G Inference processing failed:', error);
+      // Fallback to local processing
+      return this.processLocally(title, tags);
+    }
+  }
+
+  /**
+   * Build prompt for summary generation
+   */
+  private buildSummaryPrompt(title: string, tags?: string): string {
+    const tagContext = tags ? `Tags: ${tags}. ` : '';
+    
+    return `As a podcast content AI, create a compelling episode summary based on the following information:
+
+Episode Title: "${title}"
+${tagContext}
+
+Requirements:
+- Generate a 2-3 sentence engaging summary
+- Make it sound professional and intriguing
+- Focus on the main topic suggested by the title
+- Use active voice and compelling language
+- Target length: 50-100 words
+
+Podcast Episode Summary:`;
+  }
+
+  /**
+   * Build prompt for topics extraction
+   */
+  private buildTopicsPrompt(title: string, tags?: string): string {
+    const tagContext = tags ? `Existing tags: ${tags}. ` : '';
+    
+    return `Extract key topics and themes from this podcast episode information:
+
+Episode Title: "${title}"
+${tagContext}
+
+Requirements:
+- Extract 3-5 main topics
+- Return as comma-separated values
+- Focus on substantive themes
+- Use lowercase, single words or short phrases
+- Be specific and relevant to the title
+
+Key Topics:`;
+  }
+
+  /**
+   * Clean and format the summary response
+   */
+  private cleanSummaryResponse(summary: string): string {
+    return summary
+      .trim()
+      .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+      .replace(/\n+/g, ' ') // Replace newlines with spaces
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/^(Summary|Description):\s*/i, '') // Remove leading labels
+      .slice(0, 250); // Limit length
+  }
+
+  /**
+   * Parse topics from API response
+   */
+  private parseTopicsResponse(response: string): string[] {
+    return response
+      .trim()
+      .split(',')
+      .map(topic => topic.trim().toLowerCase())
+      .filter(topic => 
+        topic.length > 0 && 
+        topic.length <= 25 && // Reasonable topic length
+        !topic.match(/^(topics?|keywords?|themes?):?$/i) // Remove meta words
+      )
+      .slice(0, 5); // Limit to 5 topics
+  }
+
+  /**
+   * Fallback local summary generation
+   */
+  private generateLocalSummary(title: string, tags?: string): string {
+    const tagList = tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [];
+    const tagContext = tagList.length > 0 ? ` covering ${tagList.join(', ')}` : '';
+    
+    const summaries = [
+      `Join us for an insightful discussion about "${title}"${tagContext}. We explore key concepts and share valuable perspectives on this important topic.`,
+      `In this episode, we dive deep into "${title}"${tagContext}. Discover new insights and practical knowledge that you can apply right away.`,
+      `Explore the world of "${title}" in this engaging podcast episode${tagContext}. We break down complex ideas and share expert analysis.`,
+      `This episode focuses on "${title}"${tagContext}, offering fresh perspectives and thought-provoking discussions on current trends and developments.`
+    ];
+    
+    return summaries[Math.floor(Math.random() * summaries.length)];
+  }
+
+  /**
+   * Fallback local topics extraction
+   */
+  private extractLocalTopics(title: string, tags?: string): string[] {
+    const topics = new Set<string>();
+    
+    // Extract meaningful words from title
+    const titleWords = title.toLowerCase().split(/\s+/);
+    const stopWords = new Set([
+      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+      'of', 'with', 'by', 'is', 'are', 'was', 'were', 'this', 'that',
+      'these', 'those', 'about', 'your', 'our', 'my', 'their', 'episode'
+    ]);
+    
+    titleWords.forEach(word => {
+      const cleanWord = word.replace(/[^a-z0-9]/g, '');
+      if (cleanWord.length > 3 && !stopWords.has(cleanWord)) {
+        topics.add(cleanWord);
+      }
+    });
+    
+    // Add tags if provided
+    if (tags) {
+      tags.split(',').forEach(tag => {
+        const cleanTag = tag.trim().toLowerCase();
+        if (cleanTag.length > 0) {
+          topics.add(cleanTag);
+        }
+      });
+    }
+    
+    // Ensure we have some topics
+    if (topics.size === 0) {
+      return ['technology', 'discussion', 'insights'];
+    }
+    
+    return Array.from(topics).slice(0, 5);
+  }
+
+  /**
+   * Complete local fallback processing
+   */
+  private processLocally(title: string, tags?: string): {
+    summary: string;
+    topics: string[];
+    success: boolean;
+  } {
+    const summary = this.generateLocalSummary(title, tags);
+    const topics = this.extractLocalTopics(title, tags);
+    
+    return {
+      summary,
+      topics,
+      success: false // Mark as fallback
+    };
+  }
+
+  // Keep the original methods for backward compatibility but mark as deprecated
+  async transcribeAudio(audioCid: string): Promise<string> {
+    console.warn('transcribeAudio is deprecated - use title and tags based methods instead');
+    throw new Error('Audio transcription not supported - use title and tags based methods');
+  }
+
+  async generateSummary(transcript: string): Promise<string> {
+    console.warn('generateSummary with transcript is deprecated - use generateSummaryFromTitle instead');
+    throw new Error('Transcript-based summary not supported - use title and tags based methods');
+  }
+
+  async extractTopics(transcript: string): Promise<string[]> {
+    console.warn('extractTopics with transcript is deprecated - use extractTopicsFromTitle instead');
+    throw new Error('Transcript-based topic extraction not supported - use title and tags based methods');
+  }
+
+  // Utility methods for balance and services
   async getBalance(): Promise<any> {
     await this.ensureInitialized();
     return await this.broker!.ledger.getLedger();
@@ -239,3 +379,20 @@ export class ZeroGInference {
 }
 
 export const zeroGInference = new ZeroGInference();
+
+// Utility functions for direct use
+export const generateSummary = (title: string, tags?: string): Promise<string> => {
+  return zeroGInference.generateSummaryFromTitle(title, tags);
+};
+
+export const extractTopics = (title: string, tags?: string): Promise<string[]> => {
+  return zeroGInference.extractTopicsFromTitle(title, tags);
+};
+
+export const processEpisode = (title: string, tags?: string): Promise<{
+  summary: string;
+  topics: string[];
+  success: boolean;
+}> => {
+  return zeroGInference.processEpisodeInfo(title, tags);
+};

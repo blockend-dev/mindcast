@@ -8,8 +8,8 @@ export async function GET(
 ) {
   try {
     const { rootHash } = await params;
-
-    const INDEXER_RPC = process.env.NEXT_PUBLIC_INDEXER_RPC!;
+console.log(rootHash,'rh')
+    const INDEXER_RPC = process.env.INDEXER_RPC!;
     const indexer = new Indexer(INDEXER_RPC);
 
     const downloadsDir = '/tmp';

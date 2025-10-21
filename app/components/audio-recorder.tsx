@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useMindCastContract } from '@/app/hooks/useMindCastContract'
 import { Button } from './ui/button'
-import { Mic, Square, Upload, Loader2, CheckCircle, ExternalLink } from 'lucide-react'
+import { Mic, Square, Upload, Loader2, CheckCircle, ExternalLink, Volume2 } from 'lucide-react'
 
 type UploadState = 'idle' | 'uploading' | 'processing' | 'publishing' | 'success' | 'error'
 
@@ -15,6 +15,7 @@ export function AudioRecorder() {
   const [episodeTags, setEpisodeTags] = useState('')
   const [uploadResult, setUploadResult] = useState<{ rootHash: string; transactionHash: string } | null>(null)
   const [publishResult, setPublishResult] = useState<{ txHash: string } | null>(null)
+  const [error, setError] = useState<string>('')
 
   // Mic state
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
@@ -53,6 +54,7 @@ export function AudioRecorder() {
 
   const startRecording = async () => {
     try {
+      setError('')
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { deviceId: selectedDevice || undefined },
       })
@@ -95,7 +97,7 @@ export function AudioRecorder() {
       setIsRecording(true)
     } catch (error) {
       console.error('Error starting recording:', error)
-      alert('Failed to access microphone. Please check permissions.')
+      setError('Failed to access microphone. Please check permissions.')
     }
   }
 
@@ -114,7 +116,9 @@ export function AudioRecorder() {
 
     try {
       setUploadState('uploading')
+      setError('')
 
+      // Step 1: Upload audio to 0G Storage
       const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
       const formData = new FormData()
       formData.append('file', audioFile);
@@ -135,10 +139,16 @@ export function AudioRecorder() {
 
       setUploadState('processing')
 
+      // Step 2: Use 0G Inference with title and tags (no transcript)
       const inferenceResponse = await fetch('/api/inference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audioCid }),
+        body: JSON.stringify({
+          title: episodeTitle,
+          tags: episodeTags,
+          audioHash: audioCid,
+          // No transcript provided - AI will work with title and tags only
+        }),
       })
 
       if (!inferenceResponse.ok) {
@@ -151,6 +161,7 @@ export function AudioRecorder() {
 
       setUploadState('publishing')
 
+      // Step 3: Publish to blockchain
       const txHash = await createEpisodeMutation.mutateAsync({
         title: episodeTitle,
         audioURI: audioCid,
@@ -162,6 +173,7 @@ export function AudioRecorder() {
       setPublishResult({ txHash })
       setUploadState('success')
 
+      // Reset form after success
       setTimeout(() => {
         setUploadState('idle')
         setAudioBlob(null)
@@ -173,6 +185,7 @@ export function AudioRecorder() {
     } catch (error) {
       console.error('Publish error:', error)
       setUploadState('error')
+      setError(error instanceof Error ? error.message : 'Publishing failed')
     }
   }
 
@@ -232,7 +245,7 @@ export function AudioRecorder() {
         <p className="text-xs text-gray-500">Mic volume: {volume.toFixed(1)}</p>
 
         {/* Record Button */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <Button
             variant={isRecording ? 'destructive' : 'premium'}
             onClick={isRecording ? stopRecording : startRecording}
@@ -248,6 +261,49 @@ export function AudioRecorder() {
         {audioBlob && (
           <div className="space-y-4">
             <audio controls src={URL.createObjectURL(audioBlob)} className="w-full rounded-lg" />
+
+            {/* Episode Details */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Episode Title *</label>
+                <input
+                  type="text"
+                  value={episodeTitle}
+                  onChange={(e) => setEpisodeTitle(e.target.value)}
+                  placeholder="Enter episode title..."
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Tags (comma separated)</label>
+                <input
+                  type="text"
+                  value={episodeTags}
+                  onChange={(e) => setEpisodeTags(e.target.value)}
+                  placeholder="web3, podcast, ai, technology..."
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Provide descriptive tags to help AI generate better summary
+                </p>
+              </div>
+
+              <Button
+                variant={buttonState.variant}
+                onClick={handlePublish}
+                disabled={!episodeTitle || !isConnected || uploadState !== 'idle'}
+                className="w-full flex items-center gap-2"
+              >
+                {buttonState.icon}
+                {buttonState.text}
+              </Button>
+
+              {!isConnected && (
+                <p className="text-sm text-yellow-500 text-center">Please connect your wallet to publish</p>
+              )}
+            </div>
 
             {/* Upload Result */}
             {uploadResult && (
@@ -282,44 +338,12 @@ export function AudioRecorder() {
               </div>
             )}
 
-            {/* Episode Details */}
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Episode Title *</label>
-                <input
-                  type="text"
-                  value={episodeTitle}
-                  onChange={(e) => setEpisodeTitle(e.target.value)}
-                  placeholder="Enter episode title..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+            {/* Error Display */}
+            {error && (
+              <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tags (comma separated)</label>
-                <input
-                  type="text"
-                  value={episodeTags}
-                  onChange={(e) => setEpisodeTags(e.target.value)}
-                  placeholder="web3, podcast, ai..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <Button
-                variant={buttonState.variant}
-                onClick={handlePublish}
-                disabled={!episodeTitle || !isConnected || uploadState !== 'idle'}
-                className="w-full flex items-center gap-2"
-              >
-                {buttonState.icon}
-                {buttonState.text}
-              </Button>
-
-              {!isConnected && (
-                <p className="text-sm text-yellow-500 text-center">Please connect your wallet to publish</p>
-              )}
-            </div>
+            )}
           </div>
         )}
 

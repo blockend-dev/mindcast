@@ -1,5 +1,4 @@
 import { createPublicClient, createWalletClient, custom, http, parseEther } from 'viem'
-import { mainnet, sepolia } from 'viem/chains'
 import {MindCastRegistryABI}  from '../abis/MindCastRegistry'
 
 const testnet = {
@@ -33,7 +32,7 @@ export class MindCastContract {
 
   setWalletClient(provider: any) {
     this.walletClient = createWalletClient({
-      chain: sepolia,
+      chain: testnet,
       transport: custom(provider)
     })
   }

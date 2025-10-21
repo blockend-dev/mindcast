@@ -46,6 +46,7 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
         // Set the audio source when first playing
         if (!audioUrl) {
           const url = getAudioUrl(episode.audioURI)
+          console.log(url)
           setAudioUrl(url)
           if (audioRef.current) {
             audioRef.current.src = url
