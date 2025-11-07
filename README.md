@@ -84,22 +84,14 @@ A revolutionary decentralized podcasting platform where creators can record, upl
    
    Edit `.env.local`:
    ```env
-   # 0G Mainnet Configuration
-   NEXT_PUBLIC_0G_CHAIN_RPC=https://evmrpc-mainnet.0g.ai
-   NEXT_PUBLIC_INDEXER_RPC=https://indexer-rpc-mainnet.0g.ai
-   NEXT_PUBLIC_0G_GATEWAY=https://gateway-mainnet.0g.ai
+   NEXT_PUBLIC_WC_PROJECT_ID=walletProjectID
+   OG_RPC_URL=https://evmrpc.0g.ai
+   INDEXER_RPC=https://indexer-storage-turbo.0g.ai
+   T_PRIVATE_KEY=yourTestnetPrivateKey
+   PRIVATE_KEY=yourMainnetPrivateKey
 
-   # Mainnet Contract Addresses
-   NEXT_PUBLIC_REGISTRY_CONTRACT=0x...
-   NEXT_PUBLIC_TOKEN_CONTRACT=0x...
-   NEXT_PUBLIC_STAKING_CONTRACT=0x...
 
-   # Wallet (for contract interactions)
-   PRIVATE_KEY=your_wallet_private_key_here
-
-   # 0G Inference Mainnet
-   ZEROG_INFERENCE_BASE_URL=https://inference.0g.ai/api/v1
-   ZEROG_INFERENCE_API_KEY=your_0g_inference_api_key
+# WalletConnect
    ```
 
 4. **Run development server**
