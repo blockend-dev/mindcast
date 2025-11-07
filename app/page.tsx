@@ -50,7 +50,7 @@ export default function Home() {
               <Mic className="w-5 h-5 mr-2" />
               Start Recording
             </Button>
-            <Button 
+            {/* <Button 
               variant="outline" 
               size="lg" 
               className="rounded-full px-8 border-gray-700 text-white hover:bg-gray-800"
@@ -58,7 +58,7 @@ export default function Home() {
             >
               <Headphones className="w-5 h-5 mr-2" />
               Explore Podcasts
-            </Button>
+            </Button> */}
           </div>
 
           {/* Stats */}

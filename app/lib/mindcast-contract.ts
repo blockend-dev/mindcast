@@ -41,7 +41,7 @@ export class MindCastContract {
     
     this.publicClient = createPublicClient({
       chain: mainnet,
-      transport: http(process.env.NEXT_PUBLIC_RPC_URL!)
+      transport: http('https://evmrpc.0g.ai')
     })
   }
 
