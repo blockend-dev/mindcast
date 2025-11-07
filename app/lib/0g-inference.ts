@@ -18,7 +18,7 @@ export class ZeroGInference {
 
   private async initialize(): Promise<void> {
     try {
-      const privateKey = process.env.PRIVATE_KEY;
+      const privateKey = process.env.T_PRIVATE_KEY;
       if (!privateKey) {
         throw new Error('PRIVATE_KEY is required');
       }

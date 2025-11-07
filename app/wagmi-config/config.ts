@@ -16,12 +16,28 @@ const testnet = {
     },
 } as const;
 
+const mainnet = {
+    id: 16661,
+    name: '0G Mainnet',
+    network: 'og-chain',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'OG',
+        symbol: 'OG',
+    },
+    rpcUrls: {
+        public: { http: ['https://evmrpc.0g.ai'] },
+        default: { http: ['https://evmrpc.0g.ai'] },
+    },
+} as const;
+
 export const config = getDefaultConfig({
   appName: 'Mindcast',
   projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID!, 
-  chains: [testnet],
+  chains: [testnet,mainnet],
   transports :{
-    [testnet.id] :http('https://evmrpc-testnet.0g.ai')
+    [testnet.id] :http('https://evmrpc-testnet.0g.ai'),
+    [mainnet.id] :http('https://evmrpc.0g.ai'),
   },
   ssr: true, 
 });

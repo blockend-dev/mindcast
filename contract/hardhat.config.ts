@@ -40,8 +40,8 @@ const config: HardhatUserConfig = {
   },
  etherscan: {
     apiKey: {
-      og_testnet: process.env.ETHERSCAN_API_KEY!, // Use a placeholder if you don't have one
-      og_mainnet: process.env.ETHERSCAN_API_KEY!  // Use a placeholder if you don't have one
+      testnet: process.env.ETHERSCAN_API_KEY!, // Use a placeholder if you don't have one
+      mainnet: process.env.ETHERSCAN_API_KEY!  // Use a placeholder if you don't have one
     },
     customChains: [
       {

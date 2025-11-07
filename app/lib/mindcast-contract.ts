@@ -16,6 +16,21 @@ const testnet = {
     },
 } as const;
 
+const mainnet = {
+    id: 16661,
+    name: '0G Mainnet',
+    network: 'og-chain',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'OG',
+        symbol: 'OG',
+    },
+    rpcUrls: {
+        public: { http: ['https://evmrpc.0g.ai'] },
+        default: { http: ['https://evmrpc.0g.ai'] },
+    },
+} as const;
+
 export class MindCastContract {
   private contractAddress: `0x${string}`
   private publicClient: any
@@ -25,14 +40,14 @@ export class MindCastContract {
     this.contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
     
     this.publicClient = createPublicClient({
-      chain: testnet,
+      chain: mainnet,
       transport: http(process.env.NEXT_PUBLIC_RPC_URL!)
     })
   }
 
   setWalletClient(provider: any) {
     this.walletClient = createWalletClient({
-      chain: testnet,
+      chain: mainnet,
       transport: custom(provider)
     })
   }
