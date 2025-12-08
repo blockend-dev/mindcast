@@ -37,8 +37,6 @@ All audio, metadata, and AI analysis are stored or verified on-chain, offering *
 
 # 🏗️ Architecture
 
-## 🧩 High-Level Architecture (Mermaid Diagram)
-
 ```mermaid
 flowchart LR
   subgraph USER[Users]
