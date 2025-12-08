@@ -1,314 +1,264 @@
-# 🎙️ MindCast - Decentralized Podcast Platform
+# 🎙️ MindCast — Decentralized Podcast & Knowledge Streaming Platform
 
 ![MindCast](https://img.shields.io/badge/MindCast-Decentralized_Podcasting-blue)
 ![0G](https://img.shields.io/badge/Powered_by-0G_Mainnet-black)
 ![Web3](https://img.shields.io/badge/Web3-Enabled-green)
 ![Live](https://img.shields.io/badge/Mainnet-Live-success)
 
-A revolutionary decentralized podcasting platform where creators can record, upload, and publish voice content that's analyzed, summarized, and stored entirely on-chain via the 0G stack. Featuring a complete token economy with creator monetization and listener rewards.
+**MindCast** is a decentralized Web3 podcasting and knowledge-streaming platform where creators can **record, upload, analyze, publish, and monetize audio content fully on-chain** using the 0G stack.
 
-## 🌟 Features
+All audio, metadata, and AI analysis are stored or verified on-chain, offering **verifiable authorship**, **AI-enhanced discovery**, and a **complete token economy** for both creators and listeners.
 
-### 🎤 For Creators
-- **Record & Upload**: High-quality audio recording directly in the browser
-- **AI-Powered Analysis**: Automatic summary and topic generation using 0G Inference
-- **On-Chain Storage**: All content stored permanently on 0G decentralized storage
-- **Token Monetization**: Earn MIND tokens for content creation and engagement
-- **Direct Tipping**: Receive crypto tips from listeners
-- **Proof of Authorship**: Immutable on-chain proof of content creation
-- **Revenue Dashboard**: Track earnings and listener metrics in real-time
+---
 
-### 🎧 For Listeners
-- **Stream from 0G**: Direct streaming from decentralized storage
-- **AI Summaries**: Quick understanding of episode content
-- **On-Chain Verification**: Verify creator authenticity
-- **Earn Rewards**: Get MIND tokens for engagement and discovery
-- **Support Creators**: Direct tipping and token rewards
-- **Personalized Feeds**: AI-curated content based on preferences
+# 🌟 Features
 
-## 🏗️ Architecture
+## 🎤 For Creators
 
-### Frontend
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS with premium dark theme
-- **Web3 Integration**: Wagmi + RainbowKit for wallet connection
-- **Audio**: Web Audio API for recording and playback
-- **UI Components**: Custom design system with modern aesthetics
+* **Record & Upload:** High-quality in-browser audio recording
+* **AI-Powered Insights:** Summaries, topics & embeddings via 0G Inference
+* **On-Chain Storage:** Permanent decentralized storage on 0G Storage Mainnet
+* **Token Monetization:** Earn **MIND** tokens for publishing + engagement
+* **Direct Tipping:** Receive MIND or other tokens from listeners
+* **Proof of Authorship:** Immutable, on-chain intellectual provenance
+* **Creator Dashboard:** Analytics, earnings, and listener statistics
+* **Premium Tools (Staking):** Unlock advanced features via staking
 
-### Smart Contract Ecosystem
-- **Blockchain**: 0G Chain Mainnet (EVM-compatible)
-- **MindCastRegistry**: Podcast episode management and tipping
-- **MindCastToken**: ERC-20 token for platform economy
-- **Staking Contract**: Token staking for premium features
+## 🎧 For Listeners
 
-### Storage & AI
-- **Storage**: 0G Storage Mainnet for decentralized file storage
-- **AI Inference**: 0G Inference for content analysis
-- **Multi-format Support**: WAV, MP3, WebM, FLAC audio formats
+* **Decentralized Streaming:** Low-latency streaming directly from 0G Storage
+* **AI Summaries:** Quickly understand episode content
+* **Verified Authenticity:** Check creator signatures and metadata
+* **Earn Rewards:** Engagement-based MIND token incentives
+* **Support Creators:** Tips, boosts, and subscription features
+* **AI-Curated Feed:** Personalized recommendations using embeddings
 
-### Data Flow
-1. 🎙️ Creator records audio in browser
-2. 📦 Audio uploaded to 0G Storage Mainnet
-3. 🧠 AI analyzes content via 0G Inference
-4. 💰 Token rewards distributed to creator
-5. ⛓️ Metadata published to 0G Chain Mainnet
-6. 🎧 Listeners stream from decentralized storage
+---
 
-## 🚀 Quick Start
+# 🏗️ Architecture
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- MetaMask or compatible Web3 wallet
-- 0G mainnet ETH for gas fees
+## 🧩 High-Level Architecture (Mermaid Diagram)
 
-### Installation
+```mermaid
+flowchart LR
+  subgraph USER[Users]
+    Creator[Creator (Browser)]
+    Listener[Listener (Browser)]
+  end
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/blockend-dev/mindcast.git
-   cd mindcast
-   ```
+  subgraph FRONTEND[Frontend - Next.js App]
+    FE_UI[UI (Next.js + Tailwind)]
+    Recorder[Web Audio API / MediaRecorder]
+    WalletUI[Wagmi + RainbowKit]
+  end
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+  subgraph OGS[0G Stack]
+    Storage[0G Storage Mainnet\n(decentralized audio files)]
+    Inference[0G Inference\n(summaries, topics, embeddings)]
+    Broker[0G Compute Broker]
+  end
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local`:
-   ```env
-   NEXT_PUBLIC_WC_PROJECT_ID=walletProjectID
-   OG_RPC_URL=https://evmrpc.0g.ai
-   INDEXER_RPC=https://indexer-storage-turbo.0g.ai
-   T_PRIVATE_KEY=yourTestnetPrivateKey
-   PRIVATE_KEY=yourMainnetPrivateKey
+  subgraph CHAIN[0G Chain Smart Contracts]
+    Registry[MindCastRegistry\n(episode metadata & authorship)]
+    Token[MIND Token (ERC-20)]
+    Staking[Staking Contract]
+  end
 
+  Creator --> WalletUI
+  Creator --> Recorder
+  Recorder --> FE_UI
+  FE_UI --> Storage
+  Storage --> FE_UI
+  FE_UI --> Broker
+  Broker --> Inference
+  Inference --> FE_UI
+  FE_UI --> Registry
+  FE_UI --> Token
 
-# WalletConnect
-   ```
-
-4. **Run development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-5. **Open your browser**
-   ```
-   http://localhost:3000
-   ```
-
-## 💰 Token Economy
-
-### MindCast Token (MIND)
-- **Symbol**: MIND
-- **Total Supply**: 1,000,000,000
-- **Type**: ERC-20 on 0G Chain
-
-### Reward Distribution
-```solidity
-// Creator Rewards
-- Episode Publishing: 100 MIND
-- Listener Engagement: 10 MIND per 100 listens
-- Premium Content: 50 MIND per subscriber
-
-// Listener Rewards  
-- Daily Engagement: 5 MIND
-- Content Discovery: 2 MIND per new creator followed
-- Social Sharing: 3 MIND per share
+  Listener --> FE_UI
+  FE_UI --> Registry
+  FE_UI --> Storage
+  FE_UI --> Inference
+  Listener --> Token
 ```
 
-### Staking Benefits
-- **Basic**: 100 MIND - Access to premium analytics
-- **Pro**: 1,000 MIND - Early access to features + revenue share
-- **Elite**: 10,000 MIND - Governance rights + platform dividends
+---
 
-## 📱 Usage
+## 🧠 Data Pipeline Overview
 
-### Creating a Podcast Episode
+1. **🎙️ Record:** Creator records audio in-browser
+2. **📤 Upload:** Audio uploaded to **0G Storage Mainnet**
+3. **🧠 AI Analysis:** 0G Inference generates summaries, topics & embeddings
+4. **⛓️ On-Chain Publishing:** Registry stores metadata + proof of authorship
+5. **💰 Rewards:** Creator receives automatic **MIND token** rewards
+6. **🎧 Playback:** Listeners stream directly from decentralized storage
+7. **❤️ Engagement:** Tips, engagement rewards, and staking incentives
 
-1. **Connect Wallet**
-   - Click "Connect Wallet" in top right
-   - Approve connection in your wallet
+---
 
-2. **Record Audio**
-   - Select your microphone
-   - Click "Start Recording" 
-   - Speak your podcast content
-   - Click "Stop Recording" when done
+# 🧱 Components
 
-3. **Add Episode Details**
-   - Enter compelling episode title
-   - Add relevant tags (comma separated)
-   - Click "Generate AI Content"
+## 🎨 Frontend
 
-4. **Review & Publish**
-   - Review AI-generated summary and topics
-   - Click "Publish to MindCast"
-   - Confirm transaction in your wallet
-   - **Receive 100 MIND tokens** for publishing
-   - Wait for on-chain confirmation
+* **Next.js 14 (App Router)**
+* **Tailwind CSS**
+* **Web Audio API / MediaRecorder API**
+* **Wagmi + RainbowKit** for wallet connections
+* Custom UI design system
 
-### Listening & Earning
+## 🔗 Smart Contract Ecosystem
 
-1. **Browse Episodes**
-   - View all published episodes on main feed
-   - Filter by creator or topics
-   - **Earn 5 MIND daily** for active engagement
+* **MindCastRegistry:** Stores metadata, provenance, manages tipping
+* **MindCastToken (MIND):** ERC-20 token powering the economy
+* **Staking Contract:** Unlock premium creator/listener features
+* **Network:** 0G Chain Mainnet (EVM Compatible)
 
-2. **Play Content**
-   - Click play on any episode
-   - Stream directly from 0G Storage
-   - Read AI summary and topics
+## 📦 Storage & AI
 
-3. **Support & Earn**
-   - Tip creators with MIND tokens
-   - Share episodes to earn rewards
-   - Discover new creators for bonus tokens
+* **0G Storage Mainnet:** Permanent, decentralized file storage
+* **0G Inference Engine:** AI-powered summaries & semantic extraction
+* **Supports:** WAV, MP3, WebM, FLAC
 
-## 🔧 Technical Details
+---
 
-### Smart Contracts
+# 🚀 Quick Start
 
-#### MindCastRegistry.sol
-```solidity
-contract MindCastRegistry {
-    struct Episode {
-        address creator;
-        string title;
-        string audioURI;      // 0G Storage CID
-        string transcriptURI; // AI analysis CID  
-        string summary;       // AI-generated summary
-        string tags;          // Comma-separated topics
-        uint256 timestamp;
-        uint256 tipAmount;
-        uint256 listenerCount;
-    }
-    
-    function createEpisode(...) external;
-    function tipCreator(uint256 episodeId) external payable;
-    function getEpisodesByCreator(address) external view returns (uint256[]);
-}
+## 🔧 Prerequisites
+
+* Node.js 18+
+* MetaMask or Web3 wallet
+* 0G Mainnet ETH for gas
+
+## 📥 Installation
+
+```bash
+git clone https://github.com/blockend-dev/mindcast.git
+cd mindcast
+npm install
 ```
 
-#### MindCastToken.sol
-```solidity
-contract MindCastToken is ERC20, Ownable {
-    mapping(address => uint256) public creatorRewards;
-    mapping(address => uint256) public listenerRewards;
-    
-    function rewardCreator(address creator, uint256 amount) external;
-    function rewardListener(address listener, uint256 amount) external;
-    function stakeTokens(uint256 amount) external;
-}
+### ⚙️ Environment Variables
+
+```bash
+cp .env.example .env.local
 ```
 
-### File Structure
-```
-mindcast/
-├── app/                    # Next.js app router
-│   ├── (routes)/          # Route groups
-│   ├── components/        # React components
-│   │   ├── ui/           # Reusable UI components
-│   │   ├── audio-recorder.tsx
-│   │   ├── podcast-player.tsx
-│   │   └── token-dashboard.tsx
-│   ├── hooks/            # Custom React hooks
-│   │   ├── useMindCastContract.ts
-│   │   └── useTokenRewards.ts
-│   ├── lib/             # Utility libraries
-│   │   ├── 0g-inference.ts
-│   │   ├── 0g-storage.ts
-│   │   └── transcription.ts
-│   └── api/             # API routes
-│       ├── upload/      # File upload to 0G
-│       ├── inference/   # AI processing
-│       ├── publish/     # On-chain publishing
-│       └── download/    # File retrieval
-├── contracts/           # Solidity smart contracts
-│   ├── MindCastRegistry.sol
-│   ├── MindCastToken.sol
-│   └── StakingContract.sol
-├── wagmi-config/        # Web3 configuration
-└── public/             # Static assets
+Edit `.env.local`:
+
+```env
+NEXT_PUBLIC_WC_PROJECT_ID=walletProjectID
+OG_RPC_URL=https://evmrpc.0g.ai
+INDEXER_RPC=https://indexer-storage-turbo.0g.ai
+T_PRIVATE_KEY=yourTestnetPrivateKey
+PRIVATE_KEY=yourMainnetPrivateKey
 ```
 
-### Key Technologies
+## ▶️ Run Dev Server
 
-- **Blockchain**: 0G Chain Mainnet, Ethers.js, Wagmi
-- **Storage**: 0G Storage Mainnet, @0glabs/0g-ts-sdk
-- **AI**: 0G Inference, OpenAI-compatible API
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Audio**: Web Audio API, MediaRecorder API
-- **Wallet**: RainbowKit, MetaMask
-- **Token**: ERC-20 standard with reward mechanics
+```bash
+npm run dev
+```
 
-## 🗺️ Roadmap
+Open:
 
-### 🎯 Phase 1: Foundation ✅ COMPLETED
-- [x] Core podcasting platform on 0G Testnet
-- [x] Basic audio recording and playback
-- [x] 0G Storage integration
-- [x] AI content analysis
+```
+http://localhost:3000
+```
 
-### 🚀 Phase 2: Token Economy ✅ COMPLETED  
-- [x] MindCastToken deployment on Mainnet
-- [x] Creator reward system
-- [x] Listener engagement rewards
-- [x] Staking mechanisms
-- [x] Full migration to 0G Mainnet
+---
 
-### 🌟 Phase 3: Growth 🟡 IN PROGRESS
-- [ ] Mobile app (iOS & Android)
-- [ ] Advanced AI features (chapter markers, highlights)
-- [ ] Social features (comments, playlists)
-- [ ] Cross-chain expansion
+# 💰 Token Economy — MIND Token
 
-### 💎 Phase 4: Ecosystem ⏳ PLANNED
-- [ ] DAO governance for platform decisions
-- [ ] NFT collectibles for episodes
-- [ ] Metaverse integration
-- [ ] DeFi integrations for token utility
+## 📌 Overview
 
+* **Symbol:** MIND
+* **Total Supply:** 1,000,000,000
+* **Network:** 0G Chain
+* **Type:** ERC-20
 
-## 🔒 Security
+## 🪙 Reward Mechanics
 
-### Audits & Verification
-- **Smart Contract Audit**: Completed by ThirdWeb
-- **Code Review**: Peer-reviewed by 0G core team
-- **Penetration Testing**: Security firm assessment passed
-### Security Features
-- **Wallet Security**: Private keys never exposed client-side
-- **Content Verification**: All content hashed and stored on-chain
-- **Access Control**: Role-based smart contract permissions
-- **Data Integrity**: Cryptographic verification of stored content
-- **Economic Security**: Anti-sybil measures for token rewards
+### **Creator Rewards**
 
+* **+100 MIND** per published episode
+* **+50 MIND** for premium content drops
+* **Engagement bonuses** based on listener activity
 
+### **Listener Rewards**
 
-## 🤝 Contributing
+* **+5 MIND** daily engagement
+* **+2 MIND** for discovering new creators
+* **+3 MIND** for sharing episodes
 
-We welcome contributions from the community! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+### **Tipping**
 
+* Instant on-chain tipping using MIND or any ERC-20
 
+---
 
-## 📄 License
+# 🔒 Staking Benefits
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+| Tier      | Stake Amount | Benefits                          |
+| --------- | ------------ | --------------------------------- |
+| **Basic** | 100 MIND     | Premium analytics                 |
+| **Pro**   | 1,000 MIND   | Early feature access + boosts     |
+| **Elite** | 10,000 MIND  | Governance rights + revenue share |
 
+---
 
-## 🎉 Join the Revolution
+# 📱 Usage Guide
 
-MindCast is more than a platform—it's a movement to decentralize audio content and empower creators worldwide. With our mainnet launch and complete token economy, we're building the future of podcasting where creators own their content, listeners are rewarded for engagement, and everyone benefits from the value they create.
+## 📝 Creating a Podcast
 
-**Ready to revolutionize podcasting? Join us today!**
+1. **Connect Wallet** → authenticate
+2. **Record Audio** → browser microphone
+3. **AI Processing** → summary & topics
+4. **Publish On-Chain** → confirm transaction
+5. **Earn Rewards** → receive MIND
 
-*Built with ❤️ on 0G Mainnet - Decentralizing audio content, one podcast at a time.*
+## 🎧 Listening & Earning
+
+* Stream audio from 0G Storage
+* View AI summaries
+* Earn MIND for engagement
+* Tip creators
+
+---
+
+# 🧰 Key Technologies
+
+* **0G Chain Mainnet** (EVM)
+* **0G Storage Mainnet**
+* **0G Inference Engine**
+* Ethers.js, Wagmi, RainbowKit
+* Next.js 14, TypeScript, Tailwind CSS
+* Web Audio API, MediaRecorder
+
+---
+
+# 🤝 Contributing
+
+We welcome contributions!
+Read the [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
+* Branching strategy
+* Coding standards
+* PR guidelines
+
+---
+
+# 📄 License
+
+MIT License — see [LICENSE](LICENSE).
+
+---
+
+# 🎉 Join the Decentralized Audio Revolution
+
+MindCast is redefining how audio content is created, published, and discovered.
+With **0G Mainnet**, **AI-native features**, and a **robust token economy**, the future of decentralized podcasting is here.
+
+**Build with us. Earn with us. Grow with us.**
+*Decentralizing audio, one mind at a time.*
+
+---
