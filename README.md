@@ -42,25 +42,25 @@ All audio, metadata, and AI analysis are stored or verified on-chain, offering *
 ```mermaid
 flowchart LR
   subgraph USER[Users]
-    Creator[Creator (Browser)]
-    Listener[Listener (Browser)]
+    Creator[Creator - Browser]
+    Listener[Listener - Browser]
   end
 
   subgraph FRONTEND[Frontend - Next.js App]
-    FE_UI[UI (Next.js + Tailwind)]
+    FE_UI[UI Next.js + Tailwind]
     Recorder[Web Audio API / MediaRecorder]
     WalletUI[Wagmi + RainbowKit]
   end
 
   subgraph OGS[0G Stack]
-    Storage[0G Storage Mainnet\n(decentralized audio files)]
-    Inference[0G Inference\n(summaries, topics, embeddings)]
+    Storage[0G Storage Mainnet\n - decentralized audio files]
+    Inference[0G Inference\n - summaries, topics, embeddings]
     Broker[0G Compute Broker]
   end
 
   subgraph CHAIN[0G Chain Smart Contracts]
-    Registry[MindCastRegistry\n(episode metadata & authorship)]
-    Token[MIND Token (ERC-20)]
+    Registry[MindCastRegistry\n - episode metadata & authorship]
+    Token[MIND Token - ERC-20]
     Staking[Staking Contract]
   end
 
