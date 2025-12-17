@@ -1,18 +1,20 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Play, Pause, Volume2, Heart, Share2, Gift, Loader2 } from 'lucide-react'
 import { Button } from './ui/button'
 import { useMindCastContract } from '@/app/hooks/useMindCastContract'
 import { formatAddress, formatTimestamp } from '@/app/lib/utils'
+import { toast } from 'react-hot-toast';
+
 
 interface PodcastPlayerProps {
   episode: {
     id: number
     creator: string
     title: string
-    audioURI: string 
-    transcriptURI: string 
+    audioURI: string
+    transcriptURI: string
     summary: string
     tags: string
     timestamp: number
@@ -27,8 +29,8 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
   const [showTipModal, setShowTipModal] = useState(false)
   const [tipAmount, setTipAmount] = useState('0.001')
   const [isTipping, setIsTipping] = useState(false)
-  const [audioUrl, setAudioUrl] = useState<string>('')
-  
+  const [isLoading, setIsLoading] = useState(false)
+
   const audioRef = useRef<HTMLAudioElement>(null)
   const { useTipCreator, address, isConnected } = useMindCastContract()
   const tipMutation = useTipCreator()
@@ -38,42 +40,79 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
     return `/api/download/${rootHash}`
   }
 
-  const togglePlay = () => {
-    if (audioRef.current) {
+  // Initialize audio when episode changes
+  useEffect(() => {
+    if (episode.audioURI && audioRef.current) {
+      const url = getAudioUrl(episode.audioURI)
+      console.log('Setting audio URL:', url)
+
+      // Reset states
+      setIsPlaying(false)
+      setCurrentTime(0)
+      setDuration(0)
+
+      // Set audio source
+      audioRef.current.src = url
+      audioRef.current.load()
+    }
+  }, [episode.audioURI])
+
+  const togglePlay = async () => {
+    if (!audioRef.current) return
+
+    try {
       if (isPlaying) {
         audioRef.current.pause()
+        setIsPlaying(false)
       } else {
-        // Set the audio source when first playing
-        if (!audioUrl) {
-          const url = getAudioUrl(episode.audioURI)
-          console.log(url)
-          setAudioUrl(url)
-          if (audioRef.current) {
-            audioRef.current.src = url
-          }
+        // Ensure audio is loaded
+        if (audioRef.current.readyState < 1) { // HAVE_NOTHING
+          setIsLoading(true)
+          audioRef.current.load()
         }
-        audioRef.current.play()
+
+        await audioRef.current.play()
+        setIsPlaying(true)
+        setIsLoading(false)
       }
-      setIsPlaying(!isPlaying)
+    } catch (error) {
+      console.error('Error playing audio:', error)
+      setIsPlaying(false)
+      setIsLoading(false)
+      toast.error('Failed to play audio. Please try again.')
     }
   }
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime)
-      setDuration(audioRef.current.duration || 0)
+      const newDuration = audioRef.current.duration
+      // Handle NaN explicitly
+      setDuration(isNaN(newDuration) ? 0 : newDuration)
     }
   }
 
   const formatTime = (seconds: number) => {
+    // Handle NaN, Infinity, or negative values
+    if (!seconds || isNaN(seconds) || !isFinite(seconds) || seconds < 0) {
+      return "0:00"
+    }
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      const newDuration = audioRef.current.duration
+      setDuration(isNaN(newDuration) ? 0 : newDuration)
+      setIsLoading(false)
+    }
+  }
+
   const handleTip = async () => {
     if (!isConnected) {
-      alert('Please connect your wallet to send a tip')
+      toast.error('Please connect your wallet to send a tip')
       return
     }
 
@@ -83,21 +122,19 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
         episodeId: episode.id,
         amount: tipAmount
       })
-      
+
       setShowTipModal(false)
       setTipAmount('0.001')
-      // Show success message
-      alert(`Successfully tipped ${tipAmount} ETH to the creator!`)
+      toast.success(`Successfully tipped ${tipAmount} ETH to the creator!`)
     } catch (error) {
       console.error('Tip failed:', error)
-      alert('Failed to send tip. Please try again.')
+      toast.error('Failed to send tip. Please try again.')
     } finally {
       setIsTipping(false)
     }
   }
 
   const formatTipAmount = (amount: bigint) => {
-    // Convert from wei to ETH
     const eth = Number(amount) / 1e18
     return eth.toFixed(4)
   }
@@ -107,14 +144,14 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
       const response = await fetch(`/api/download/${episode.transcriptURI}`)
       if (response.ok) {
         const transcriptData = await response.json()
-        // Show transcript in a modal or new window
-        alert(`Transcript: ${transcriptData.transcript || 'No transcript available'}`)
+        toast.success(`Transcript: ${transcriptData.transcript || 'No transcript available'}`)
       } else {
-        throw new Error('Failed to fetch transcript')
+        toast.error('Failed to fetch transcript')
       }
     } catch (error) {
       console.error('Error fetching transcript:', error)
-      alert('Failed to load transcript')
+      toast.error('Failed to fetch transcript')
+
     }
   }
 
@@ -127,12 +164,11 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
               <Volume2 className="w-8 h-8 text-white" />
             </div>
           </div>
-          
+
           <div className="flex-grow">
             <h3 className="text-xl font-semibold text-white mb-2">{episode.title}</h3>
             <p className="text-gray-400 text-sm mb-4">{episode.summary}</p>
-            
-            {/* Episode Metadata */}
+
             <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
               <span>By {formatAddress(episode.creator)}</span>
               <span>•</span>
@@ -143,50 +179,61 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
                 {formatTipAmount(episode.tipAmount)} ETH
               </span>
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Button
                   variant="premium"
                   size="icon"
                   onClick={togglePlay}
+                  disabled={isLoading}
                   className="rounded-full w-12 h-12"
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
                 </Button>
-                
+
                 <div className="flex-grow">
                   <div className="flex justify-between text-sm text-gray-400 mb-1">
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-purple-600 to-blue-500 h-2 rounded-full transition-all duration-200"
-                      style={{ width: `${(currentTime / duration) * 100}%` }}
+                      style={{
+                        width: duration > 0
+                          ? `${(currentTime / duration) * 100}%`
+                          : '0%'
+                      }}
                     />
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between pt-2">
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
                     <Heart className="w-4 h-4 mr-2" />
                     Like
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="text-blue-400 hover:text-blue-300"
                     onClick={handleViewTranscript}
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     Transcript
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="text-green-400 hover:text-green-300"
                     onClick={() => setShowTipModal(true)}
                     disabled={episode.creator.toLowerCase() === address?.toLowerCase()}
@@ -195,13 +242,12 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
                     Tip Creator
                   </Button>
                 </div>
-                
+
                 <div className="text-xs text-gray-500">
                   Episode #{episode.id}
                 </div>
               </div>
 
-              {/* Tags */}
               {episode.tags && (
                 <div className="flex flex-wrap gap-2 pt-2">
                   {episode.tags.split(',').map((tag, index) => (
@@ -217,26 +263,27 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
             </div>
           </div>
         </div>
-        
+
         <audio
           ref={audioRef}
-          src={audioUrl}
+          preload="metadata"
+          onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleTimeUpdate}
           onEnded={() => setIsPlaying(false)}
           onError={(e) => {
             console.error('Audio loading error:', e)
-            alert('Failed to load audio. Please try again.')
+            setIsLoading(false)
+            toast.error('Failed to load audio. Please try again.')
           }}
         />
       </div>
 
-      {/* Tip Modal */}
+      {/* Tip Modal remains the same */}
       {showTipModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-gray-900 rounded-2xl p-6 border border-gray-700 max-w-md w-full mx-4">
             <h3 className="text-xl font-semibold text-white mb-4">Tip the Creator</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -258,11 +305,10 @@ export function PodcastPlayer({ episode }: PodcastPlayerProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => setTipAmount(amount)}
-                    className={`flex-1 ${
-                      tipAmount === amount 
-                        ? 'border-purple-500 text-purple-500' 
+                    className={`flex-1 ${tipAmount === amount
+                        ? 'border-purple-500 text-purple-500'
                         : 'border-gray-700 text-gray-400'
-                    }`}
+                      }`}
                   >
                     {amount} ETH
                   </Button>
